@@ -24,26 +24,51 @@ Message := "Hellope"
 
 main :: proc() {
 
+    Format.println("=== START SERVER ===")
+
     serverSocket, errSocket := Net.create_socket(.IP4, .TCP)
 
-    Format.println("Error Status: ", errSocket)
+    Format.println("Create Socket Error: ", errSocket)
 
     switch serverSocket {
     case serverSocket.(Net.TCP_Socket):
+
+        Format.println("Socket Type: TCP")
+
         // Server
         serverBind := Net.bind(serverSocket, ServerPoint)
-        serverListen, _ := Net.listen_tcp(ServerPoint, 10)
+        Format.println("Bind Error: ", serverBind)
+
+        serverListen, listenError := Net.listen_tcp(ServerPoint, 10)
+
+        Format.println("Listen Error: ", listenError)
+        Format.println("Listening Endpoint: ", ServerPoint)
 
         // Client
-        clientSocket, _, _ := Net.accept_tcp(serverListen)
+        Format.println("Waiting for client connection...")
+
+        clientSocket, clientEndpoint, acceptError := Net.accept_tcp(serverListen)
+
+        Format.println("Client Endpoint: ", clientEndpoint)
+        Format.println("Accept Error: ", acceptError)
 
         socketAddress, socketAddressErr := Net.bound_endpoint(serverSocket)
+
+        Format.println("Server Bound Endpoint: ", socketAddress)
+        Format.println("Bound Endpoint Error: ", socketAddressErr)
 
         // Share the same memory, not a copy
         messageToBytes := transmute([]byte)Message
 
+        Format.println("Message: ", Message)
+        Format.println("Message Bytes: ", messageToBytes)
+        Format.println("Message Length: ", len(messageToBytes))
+
         seedMessage, errSend := Net.send_tcp(clientSocket, messageToBytes)
+
         Format.println("Bytes enviados: ", seedMessage)
         Format.println("Error send message: ", errSend)
+
+        Format.println("=== END SERVER ===")
     }
 }
