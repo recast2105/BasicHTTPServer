@@ -3,72 +3,74 @@ package Main
 import Format "core:fmt"
 import Net "core:net"
 
-SERVER_ADDRESS :: Net.IP4_Loopback
-
-Server := Net.Host {
-    hostname = "Server - Default Test",
-    port = 80,
-}
-
 ServerPoint := Net.Endpoint {
     address = Net.IP4_Loopback,
     port = 5353,
-}
-
-Point2 := Net.Endpoint {
-    address = Net.IP4_Loopback,
-    port = 5354,
 }
 
 Message := "Hellope"
 
 main :: proc() {
 
-    Format.println("=== START SERVER ===")
+    // SERVER
 
-    serverSocket, errSocket := Net.create_socket(.IP4, .TCP)
+    serverSocket, listenError := Net.listen_tcp(ServerPoint, 10)
 
-    Format.println("Create Socket Error: ", errSocket)
+    Format.println("Listen Error: ", listenError)
 
-    switch serverSocket {
-    case serverSocket.(Net.TCP_Socket):
+    if listenError != nil {
+        return
+    }
 
-        Format.println("Socket Type: TCP")
+    Format.println("Server listening on: ", ServerPoint)
 
-        // Server
-        serverBind := Net.bind(serverSocket, ServerPoint)
-        Format.println("Bind Error: ", serverBind)
+    // CLIENT
 
-        serverListen, listenError := Net.listen_tcp(ServerPoint, 10)
+    clientSocket, connectError := Net.dial_tcp(ServerPoint)
 
-        Format.println("Listen Error: ", listenError)
-        Format.println("Listening Endpoint: ", ServerPoint)
+    Format.println("Connect Error: ", connectError)
 
-        // Client
-        Format.println("Waiting for client connection...")
+    if connectError != nil {
+        return
+    }
 
-        clientSocket, clientEndpoint, acceptError := Net.accept_tcp(serverListen)
+    // SERVER ACCEPT
 
-        Format.println("Client Endpoint: ", clientEndpoint)
-        Format.println("Accept Error: ", acceptError)
+    acceptedSocket, clientEndpoint, acceptError := Net.accept_tcp(serverSocket)
 
-        socketAddress, socketAddressErr := Net.bound_endpoint(serverSocket)
+    Format.println("Client Endpoint: ", clientEndpoint)
+    Format.println("Accept Error: ", acceptError)
 
-        Format.println("Server Bound Endpoint: ", socketAddress)
-        Format.println("Bound Endpoint Error: ", socketAddressErr)
+    if acceptError != nil {
+        return
+    }
 
-        // Share the same memory, not a copy
-        messageToBytes := transmute([]byte)Message
+    // SERVER SEND
 
-        Format.println("Message: ", Message)
-        Format.println("Message Bytes: ", messageToBytes)
-        Format.println("Message Length: ", len(messageToBytes))
+    messageToBytes := transmute([]byte)Message
 
-        seedMessage, errSend := Net.send_tcp(clientSocket, messageToBytes)
+    bytesSent, sendError := Net.send_tcp(
+        acceptedSocket,
+        messageToBytes,
+    )
 
-        Format.println("Bytes enviados: ", seedMessage)
-        Format.println("Error send message: ", errSend)
+    Format.println("Bytes enviados: ", bytesSent)
+    Format.println("Send Error: ", sendError)
 
-        Format.println("=== END SERVER ===")
+
+    // CLIENT RECEIVE
+
+    buffer: [1024]byte
+
+    bytesReceived, receiveError := Net.recv_tcp(
+        clientSocket,
+        buffer[:],
+    )
+
+    Format.println("Bytes recebidos: ", bytesReceived)
+    Format.println("Receive Error: ", receiveError)
+
+    if bytesReceived > 0 {
+        Format.println("Mensagem recebida: ", string(buffer[:bytesReceived]))
     }
 }
