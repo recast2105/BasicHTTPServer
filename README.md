@@ -41,3 +41,7 @@
 - Youtube:
     - TechTerms - [Video](https://www.youtube.com/watch?v=2QGgEk20RXM)
     - The Coding Gopher - [Video](https://www.youtube.com/watch?v=D26sUZ6DHNQ)
+
+### Obs: 
+
+<p> Study project the fundamental of networking.
