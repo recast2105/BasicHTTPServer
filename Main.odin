@@ -1,7 +1,10 @@
-package Main
+package main
 
 import Format "core:fmt"
 import Net "core:net"
+
+import Server "src/server"
+import Client "src/client"
 
 ServerPoint := Net.Endpoint {
     address = Net.IP4_Loopback,
@@ -13,8 +16,7 @@ Message := "Hellope"
 main :: proc() {
 
     // SERVER
-
-    serverSocket, listenError := Net.listen_tcp(ServerPoint, 10)
+    serverSocket, listenError := Server.Listen(ServerPoint)
 
     Format.println("Listen Error: ", listenError)
 
@@ -22,11 +24,8 @@ main :: proc() {
         return
     }
 
-    Format.println("Server listening on: ", ServerPoint)
-
     // CLIENT
-
-    clientSocket, connectError := Net.dial_tcp(ServerPoint)
+    clientSocket, connectError := Client.Connect(ServerPoint)
 
     Format.println("Connect Error: ", connectError)
 
@@ -35,8 +34,7 @@ main :: proc() {
     }
 
     // SERVER ACCEPT
-
-    acceptedSocket, clientEndpoint, acceptError := Net.accept_tcp(serverSocket)
+    acceptedSocket, clientEndpoint, acceptError := Server.Accept(serverSocket)
 
     Format.println("Client Endpoint: ", clientEndpoint)
     Format.println("Accept Error: ", acceptError)
@@ -46,26 +44,17 @@ main :: proc() {
     }
 
     // SERVER SEND
-
     messageToBytes := transmute([]byte)Message
 
-    bytesSent, sendError := Net.send_tcp(
-        acceptedSocket,
-        messageToBytes,
-    )
+    bytesSent, sendError := Server.Send(acceptedSocket, messageToBytes)
 
     Format.println("Bytes enviados: ", bytesSent)
     Format.println("Send Error: ", sendError)
 
-
     // CLIENT RECEIVE
-
     buffer: [1024]byte
 
-    bytesReceived, receiveError := Net.recv_tcp(
-        clientSocket,
-        buffer[:],
-    )
+    bytesReceived, receiveError := Client.Receive(clientSocket, buffer[:])
 
     Format.println("Bytes recebidos: ", bytesReceived)
     Format.println("Receive Error: ", receiveError)
